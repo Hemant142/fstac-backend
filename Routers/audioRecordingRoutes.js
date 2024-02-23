@@ -1,14 +1,14 @@
 const express = require("express");
-// const router = express.Router();
 const AudioRecording = require("../Models/Recording");
 const audioRouter = express.Router();
+
 // Get all audio recordings
 audioRouter.get("/", async (req, res) => {
   try {
     const audioRecordings = await AudioRecording.find();
     res.status(200).json(audioRecordings);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to fetch audio recordings", error: error.message });
   }
 });
 
@@ -25,7 +25,7 @@ audioRouter.post("/", async (req, res) => {
     const savedRecording = await newRecording.save();
     res.status(201).json(savedRecording);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ message: "Failed to create audio recording", error: error.message });
   }
 });
 
@@ -35,14 +35,12 @@ audioRouter.put("/:id", async (req, res) => {
   const { name } = req.body;
 
   try {
-    const recording = await AudioRecording.findById(id);
+    const recording = await AudioRecording.findByIdAndUpdate(id, { name }, { new: true });
     if (!recording) return res.status(404).json({ message: "Recording not found" });
-
-    recording.name = name;
-    const updatedRecording = await recording.save();
-    res.json(updatedRecording);
+    
+    res.json(recording);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to update audio recording", error: error.message });
   }
 });
 
@@ -51,10 +49,12 @@ audioRouter.delete("/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
-    await AudioRecording.findByIdAndDelete(id);
-    res.json({ message: "Recording deleted" });
+    const deletedRecording = await AudioRecording.findByIdAndDelete(id);
+    if (!deletedRecording) return res.status(404).json({ message: "Recording not found" });
+    
+    res.json({ message: "Recording deleted", deletedRecording });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Failed to delete audio recording", error: error.message });
   }
 });
 
