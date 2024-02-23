@@ -2,11 +2,24 @@ const express = require("express");
 const AudioRecording = require("../Models/Recording");
 const audioRouter = express.Router();
 
-// Get all audio recordings
+// Get all audio recordings with pagination
 audioRouter.get("/", async (req, res) => {
   try {
-    const audioRecordings = await AudioRecording.find();
-    res.status(200).json(audioRecordings);
+    const page = parseInt(req.query.page) || 1; // Current page number
+    const limit = parseInt(req.query.limit) || 10; // Number of recordings per page
+    const skip = (page - 1) * limit; // Number of recordings to skip
+
+    const audioRecordings = await AudioRecording.find().skip(skip).limit(limit);
+    const totalRecordings = await AudioRecording.countDocuments();
+
+    const totalPages = Math.ceil(totalRecordings / limit);
+
+    res.status(200).json({
+      currentPage: page,
+      totalPages: totalPages,
+      totalRecordings: totalRecordings,
+      audioRecordings: audioRecordings
+    });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch audio recordings", error: error.message });
   }
